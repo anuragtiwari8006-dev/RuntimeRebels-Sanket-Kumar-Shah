@@ -5,6 +5,7 @@ const path = require('path');
 require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
+const issueRoutes = require('./routes/issueRoutes');
 
 const app = express();
 
@@ -16,13 +17,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/issues', issueRoutes);
 
-// Fallback Route: Serve index.html for Root Path
+// Fallback Route
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Basic Health Check API
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'HostelHub Core Engine Active' });
 });

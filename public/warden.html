@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HostelHub - Warden Command Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+
+  <nav class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <i data-lucide="shield-alert" class="w-8 h-8 text-rose-500"></i>
+        <span class="text-xl font-bold text-white">Warden Command Center</span>
+      </div>
+      <button id="logoutBtn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition">Logout</button>
+    </div>
+  </nav>
+
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-xl">
+      <h2 class="text-lg font-bold text-white mb-6 flex items-center space-x-2">
+        <i data-lucide="timer" class="w-5 h-5 text-indigo-400"></i>
+        <span>Real-Time Maintenance SLA Tracker</span>
+      </h2>
+
+      <div id="wardenTicketsList" class="space-y-4">
+        <p class="text-slate-400 text-sm">Loading complaints dashboard...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem('user'));
+    const token = localStorage.getItem('token');
+
+    if (!token || user?.role !== 'WARDEN') {
+      window.location.href = '/index.html';
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.clear();
+      window.location.href = '/index.html';
+    });
+
+    let ticketsData = [];
+
+    async function fetchWardenTickets() {
+      try {
+        const res = await fetch('/api/issues', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        ticketsData = await res.json();
+        renderTickets();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderTickets() {
+      const container = document.getElementById('wardenTicketsList');
+      if (ticketsData.length === 0) {
+        container.innerHTML = `<p class="text-slate-400 text-sm">No maintenance tickets active.</p>`;
+        return;
+      }
+
+      container.innerHTML = ticketsData.map(t => {
+        const createdAt = new Date(t.createdAt).getTime();
+        const slaDeadline = createdAt + (t.slaHours * 60 * 60 * 1000);
+        const now = new Date().getTime();
+        const diff = slaDeadline - now;
+
+        let timerText = '';
+        let isBreached = false;
+
+        if (t.status === 'RESOLVED') {
+          timerText = 'Resolved';
+        } else if (diff <= 0) {
+          isBreached = true;
+          timerText = 'SLA BREACHED!';
+        } else {
+          const hours = Math.floor(diff / (1000 * 60 * 60));
+          const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const secs = Math.floor((diff % (1000 * 60)) / 1000);
+          timerText = `${hours}h ${mins}m ${secs}s remaining`;
+        }
+
+        return `
+          <div class="p-5 bg-slate-900/90 border ${isBreached ? 'border-rose-500/80 bg-rose-950/20' : 'border-slate-700/80'} rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center space-x-2 mb-2">
+                <span class="px-2 py-0.5 text-xs font-bold rounded bg-slate-800 text-indigo-300">Room ${t.roomNumber}</span>
+                <span class="text-xs text-slate-400">${t.resident?.name || 'Resident'}</span>
+                <span class="px-2 py-0.5 text-[10px] font-bold rounded uppercase ${isBreached ? 'bg-rose-500 text-white animate-pulse' : 'bg-slate-800 text-slate-300'}">${t.priority}</span>
+              </div>
+              <p class="text-sm font-medium text-slate-100">${t.description}</p>
+            </div>
+
+            <div class="flex items-center space-x-4">
+              <div class="text-right">
+                <div class="text-xs font-mono font-bold ${isBreached ? 'text-rose-400' : 'text-emerald-400'}">${timerText}</div>
+                <div class="text-[10px] text-slate-500">SLA: ${t.slaHours} Hours</div>
+              </div>
+
+              ${t.status !== 'RESOLVED' ? `
+                <button onclick="resolveTicket('${t._id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-lg transition">
+                  Mark Resolved
+                </button>
+              ` : `
+                <span class="px-3 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-lg">Done</span>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function resolveTicket(id) {
+      try {
+        const res = await fetch(`/api/issues/${id}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ status: 'RESOLVED' })
+        });
+        if (res.ok) fetchWardenTickets();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    fetchWardenTickets();
+    setInterval(renderTickets, 1000);
+    if (window.lucide) lucide.createIcons();
+  </script>
+</body>
+</html>
