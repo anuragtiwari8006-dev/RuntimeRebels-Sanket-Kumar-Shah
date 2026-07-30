@@ -9,6 +9,7 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen">
 
+  <!-- Top Navigation Bar -->
   <nav class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
       <div class="flex items-center space-x-3">
@@ -19,7 +20,36 @@
     </div>
   </nav>
 
-  <div class="max-w-7xl mx-auto px-6 py-8">
+  <div class="max-w-7xl mx-auto px-6 py-8 space-y-8">
+
+    <!-- 1. One-Tap Emergency Gate Lockdown Box (Dynamic State) -->
+    <div id="lockdownCard" class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-xl flex items-center justify-between transition-all duration-300">
+      <div>
+        <h3 id="lockdownTitle" class="text-lg font-bold text-slate-200 flex items-center space-x-2">
+          <i data-lucide="shield" class="w-5 h-5 text-indigo-400"></i>
+          <span>Perimeter Gate Protocol</span>
+        </h3>
+        <p id="lockdownSubtitle" class="text-xs text-slate-400 mt-1">Status: Gates operating normally.</p>
+      </div>
+
+      <button id="lockdownToggleBtn" class="px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-lg flex items-center space-x-2">
+        <span>Initiate Lockdown</span>
+      </button>
+    </div>
+
+    <!-- 2. Pending Gate Pass Approval Requests -->
+    <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-xl space-y-4">
+      <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+        <i data-lucide="qr-code" class="w-5 h-5 text-amber-400"></i>
+        <span>Pending Visitor Gate Pass Requests</span>
+      </h2>
+
+      <div id="pendingPassesList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <p class="text-slate-400 text-sm col-span-full">Loading pending gate passes...</p>
+      </div>
+    </div>
+
+    <!-- 3. Real-Time Maintenance SLA Tracker -->
     <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-xl">
       <h2 class="text-lg font-bold text-white mb-6 flex items-center space-x-2">
         <i data-lucide="timer" class="w-5 h-5 text-indigo-400"></i>
@@ -30,6 +60,7 @@
         <p class="text-slate-400 text-sm">Loading complaints dashboard...</p>
       </div>
     </div>
+
   </div>
 
   <script>
@@ -45,6 +76,120 @@
       window.location.href = '/index.html';
     });
 
+    // -------------------------------------------------------------
+    // FEATURE 1: Dynamic Emergency Lockdown & Retraction
+    // -------------------------------------------------------------
+    let isLockdownActive = false;
+
+    async function checkLockdownStatus() {
+      try {
+        const res = await fetch('/api/passes/lockdown/status', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        isLockdownActive = data.isLockdownActive;
+        updateLockdownUI();
+      } catch (err) { console.error('Error checking lockdown:', err); }
+    }
+
+    function updateLockdownUI() {
+      const card = document.getElementById('lockdownCard');
+      const title = document.getElementById('lockdownTitle');
+      const subtitle = document.getElementById('lockdownSubtitle');
+      const btn = document.getElementById('lockdownToggleBtn');
+
+      if (isLockdownActive) {
+        card.className = "bg-rose-950/40 border border-rose-500/80 rounded-2xl p-6 shadow-xl flex items-center justify-between transition-all duration-300";
+        title.className = "text-lg font-bold text-rose-400 flex items-center space-x-2 animate-pulse";
+        title.innerHTML = `<i data-lucide="alert-triangle" class="w-5 h-5 text-rose-500"></i><span>🚨 EMERGENCY LOCKDOWN ACTIVE</span>`;
+        subtitle.textContent = "All gate scans suspended. Revoke protocol to normalize operations.";
+        
+        btn.className = "px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-emerald-600/30";
+        btn.innerHTML = `<span>RETRACT LOCKDOWN PROTOCOL</span>`;
+      } else {
+        card.className = "bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-xl flex items-center justify-between transition-all duration-300";
+        title.className = "text-lg font-bold text-slate-200 flex items-center space-x-2";
+        title.innerHTML = `<i data-lucide="shield" class="w-5 h-5 text-indigo-400"></i><span>Perimeter Gate Protocol</span>`;
+        subtitle.textContent = "Status: Normal operations. Click below in case of emergency.";
+        
+        btn.className = "px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-rose-600/30";
+        btn.innerHTML = `<span>INITIATE EMERGENCY LOCKDOWN</span>`;
+      }
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    document.getElementById('lockdownToggleBtn').addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/passes/lockdown/toggle', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        isLockdownActive = data.isLockdownActive;
+        updateLockdownUI();
+        alert(data.message);
+      } catch (err) { console.error('Error toggling lockdown:', err); }
+    });
+
+    // -------------------------------------------------------------
+    // FEATURE 2: Gate Pass Approval System
+    // -------------------------------------------------------------
+    async function fetchPendingPasses() {
+      try {
+        const res = await fetch('/api/passes/pending', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const passes = await res.json();
+        const container = document.getElementById('pendingPassesList');
+
+        if (!Array.isArray(passes) || passes.length === 0) {
+          container.innerHTML = `<p class="text-slate-400 text-sm col-span-full">No pending gate pass requests.</p>`;
+          return;
+        }
+
+        container.innerHTML = passes.map(p => `
+          <div class="p-4 bg-slate-900 border border-slate-700/80 rounded-xl space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-bold text-white">${p.visitorName}</span>
+              <span class="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
+                Room ${p.resident?.roomNumber || 'N/A'} (${p.resident?.name || 'Resident'})
+              </span>
+            </div>
+            <div class="text-xs text-slate-400 space-y-1 bg-slate-950 p-2.5 rounded border border-slate-800">
+              <p>Relation: <span class="text-slate-200 font-medium">${p.relation}</span></p>
+              <p>Phone: <span class="text-amber-400 font-mono">${p.visitorPhone}</span></p>
+            </div>
+            <div class="flex space-x-2 pt-1">
+              <button onclick="handlePassDecision('${p._id}', 'APPROVED')" class="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-lg transition">
+                Approve
+              </button>
+              <button onclick="handlePassDecision('${p._id}', 'REJECTED')" class="flex-1 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs rounded-lg transition">
+                Reject
+              </button>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) { console.error('Error fetching passes:', err); }
+    }
+
+    async function handlePassDecision(id, status) {
+      try {
+        const res = await fetch(`/api/passes/${id}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ status })
+        });
+        if (res.ok) fetchPendingPasses();
+      } catch (err) { console.error('Error updating pass status:', err); }
+    }
+
+    // -------------------------------------------------------------
+    // FEATURE 3: Maintenance SLA Countdown Tracker
+    // -------------------------------------------------------------
     let ticketsData = [];
 
     async function fetchWardenTickets() {
@@ -54,14 +199,12 @@
         });
         ticketsData = await res.json();
         renderTickets();
-      } catch (err) {
-        console.error(err);
-      }
+      } catch (err) { console.error('Error fetching tickets:', err); }
     }
 
     function renderTickets() {
       const container = document.getElementById('wardenTicketsList');
-      if (ticketsData.length === 0) {
+      if (!Array.isArray(ticketsData) || ticketsData.length === 0) {
         container.innerHTML = `<p class="text-slate-400 text-sm">No maintenance tickets active.</p>`;
         return;
       }
@@ -128,13 +271,18 @@
           body: JSON.stringify({ status: 'RESOLVED' })
         });
         if (res.ok) fetchWardenTickets();
-      } catch (err) {
-        console.error(err);
-      }
+      } catch (err) { console.error('Error resolving ticket:', err); }
     }
 
+    // Initialize Dashboard
+    checkLockdownStatus();
+    fetchPendingPasses();
     fetchWardenTickets();
+
+    // Set polling intervals
+    setInterval(fetchPendingPasses, 3000);
     setInterval(renderTickets, 1000);
+
     if (window.lucide) lucide.createIcons();
   </script>
 </body>

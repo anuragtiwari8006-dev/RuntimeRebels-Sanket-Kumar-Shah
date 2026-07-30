@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HostelHub - Security Perimeter Scanner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+
+  <nav class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <i data-lucide="shield" class="w-8 h-8 text-amber-400"></i>
+        <span class="text-xl font-bold text-white">Main Gate Perimeter Security</span>
+      </div>
+      <button id="logoutBtn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition">Logout</button>
+    </div>
+  </nav>
+
+  <div class="max-w-3xl mx-auto px-6 py-8 space-y-6">
+
+    <!-- Lockdown Alert Banner -->
+    <div id="lockdownBanner" class="hidden p-4 bg-rose-500/20 border border-rose-500 rounded-xl flex items-center space-x-3 text-rose-300 animate-pulse">
+      <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+      <div>
+        <h3 class="font-bold">EMERGENCY CAMPUS LOCKDOWN ACTIVE</h3>
+        <p class="text-xs text-rose-400">Warden has suspended all gate activity. Entry and Exit blocked.</p>
+      </div>
+    </div>
+
+    <!-- Scanner Box -->
+    <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-xl text-center space-y-4">
+      <h2 class="text-lg font-bold text-white flex items-center justify-center space-x-2">
+        <i data-lucide="qr-code" class="w-5 h-5 text-amber-400"></i>
+        <span>Scan Visitor Gate Pass Token</span>
+      </h2>
+
+      <div class="flex space-x-2 max-w-md mx-auto">
+        <input 
+          type="text" 
+          id="qrInput" 
+          placeholder="Paste or Scan PASS- Token (e.g. PASS-1234)" 
+          class="flex-1 px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500 font-mono"
+        >
+        <button id="scanBtn" class="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-sm transition">
+          Verify
+        </button>
+      </div>
+    </div>
+
+    <!-- Scan Result Card -->
+    <div id="resultCard" class="hidden bg-slate-800/60 border rounded-2xl p-6 shadow-xl space-y-4">
+      <div id="statusBadge" class="p-3 rounded-lg text-center font-bold text-sm tracking-wide"></div>
+
+      <div id="passDetails" class="grid grid-cols-2 gap-4 text-xs font-mono bg-slate-900/80 p-4 rounded-xl border border-slate-700/60">
+        <div>
+          <span class="text-slate-500">Visitor Name:</span>
+          <p id="vName" class="text-slate-200 font-bold text-sm"></p>
+        </div>
+        <div>
+          <span class="text-slate-500">Visitor Phone (Masked):</span>
+          <p id="vPhone" class="text-amber-400 font-bold text-sm"></p>
+        </div>
+        <div>
+          <span class="text-slate-500">Visiting Resident:</span>
+          <p id="rName" class="text-slate-200 font-bold text-sm"></p>
+        </div>
+        <div>
+          <span class="text-slate-500">Room Number:</span>
+          <p id="rRoom" class="text-indigo-400 font-bold text-sm"></p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem('user'));
+    const token = localStorage.getItem('token');
+
+    if (!token || user?.role !== 'SECURITY') {
+      window.location.href = '/index.html';
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.clear();
+      window.location.href = '/index.html';
+    });
+
+    async function checkLockdown() {
+      try {
+        const res = await fetch('/api/passes/lockdown/status', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        const banner = document.getElementById('lockdownBanner');
+        if (data.isLockdownActive) {
+          banner.classList.remove('hidden');
+        } else {
+          banner.classList.add('hidden');
+        }
+      } catch (err) { console.error(err); }
+    }
+
+    document.getElementById('scanBtn').addEventListener('click', async () => {
+      const qrToken = document.getElementById('qrInput').value.trim();
+      if (!qrToken) return;
+
+      const resultCard = document.getElementById('resultCard');
+      const statusBadge = document.getElementById('statusBadge');
+
+      try {
+        const res = await fetch('/api/passes/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ qrToken })
+        });
+
+        const data = await res.json();
+        resultCard.classList.remove('hidden');
+
+        if (res.ok && data.allowed) {
+          resultCard.className = 'bg-slate-800/60 border border-emerald-500/50 rounded-2xl p-6 shadow-xl space-y-4';
+          statusBadge.className = 'p-3 rounded-lg text-center font-bold text-sm tracking-wide bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+          statusBadge.textContent = `✅ ${data.message}`;
+
+          document.getElementById('vName').textContent = data.pass.visitorName;
+          document.getElementById('vPhone').textContent = data.pass.visitorPhoneMasked;
+          document.getElementById('rName').textContent = data.pass.residentName;
+          document.getElementById('rRoom').textContent = `Room ${data.pass.roomNumber}`;
+        } else {
+          resultCard.className = 'bg-slate-800/60 border border-rose-500/50 rounded-2xl p-6 shadow-xl space-y-4';
+          statusBadge.className = 'p-3 rounded-lg text-center font-bold text-sm tracking-wide bg-rose-500/20 text-rose-400 border border-rose-500/30';
+          statusBadge.textContent = `❌ ${data.message || 'Verification Failed'}`;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    checkLockdown();
+    setInterval(checkLockdown, 3000);
+    if (window.lucide) lucide.createIcons();
+  </script>
+</body>
+</html>

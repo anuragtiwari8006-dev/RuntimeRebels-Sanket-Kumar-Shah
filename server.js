@@ -6,20 +6,20 @@ require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
 const issueRoutes = require('./routes/issueRoutes');
+const passRoutes = require('./routes/passRoutes');
 
 const app = express();
 
 app.use(express.json());
 app.use(cors());
 
-// Serve Static Frontend HTML/JS/CSS Files
 app.use(express.static(path.join(__dirname, 'public')));
 
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/issues', issueRoutes);
+app.use('/api/passes', passRoutes);
 
-// Fallback Route
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
