@@ -1,19 +1,46 @@
 const mongoose = require('mongoose');
 
 const visitorPassSchema = new mongoose.Schema({
-  resident: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  visitorName: { type: String, required: true },
-  visitorPhone: { type: String, required: true },
-  relation: { type: String, required: true },
-  qrToken: { type: String, required: true, unique: true },
-  status: { 
-    type: String, 
-    enum: ['PENDING', 'APPROVED', 'CHECKED_IN', 'CHECKED_OUT', 'REJECTED'], 
-    default: 'APPROVED' 
+  student: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
-  validUntil: { type: Date, required: true },
-  entryTime: { type: Date },
-  exitTime: { type: Date }
+  reason: {
+    type: String,
+    required: [true, 'Reason is required'],
+    trim: true
+  },
+  destination: {
+    type: String,
+    required: [true, 'Destination is required'],
+    trim: true
+  },
+  outDate: {
+    type: String,
+    required: [true, 'Out date is required']
+  },
+  inDate: {
+    type: String,
+    required: [true, 'Expected return date is required']
+  },
+  status: {
+    type: String,
+    enum: ['PENDING', 'APPROVED', 'REJECTED', 'CHECKED_OUT', 'CHECKED_IN'],
+    default: 'PENDING'
+  },
+  // Set default generator + sparse: true to prevent MongoDB index collisions (E11000 error)
+  qrToken: {
+    type: String,
+    default: () => Math.random().toString(36).substring(2) + Date.now().toString(36),
+    sparse: true
+  },
+  securityCheckedOutAt: {
+    type: Date
+  },
+  securityCheckedInAt: {
+    type: Date
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('VisitorPass', visitorPassSchema);

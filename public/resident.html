@@ -1,240 +1,365 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HostelHub - Resident Portal</title>
+  <title>Resident Portal - HostelHub</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
 
-  <nav class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3">
-        <i data-lucide="building" class="w-8 h-8 text-indigo-500"></i>
-        <span class="text-xl font-bold text-white">Resident Hub</span>
+        <div class="h-9 w-9 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">
+          HH
+        </div>
+        <span class="font-bold text-lg text-white tracking-wide">HostelHub</span>
       </div>
+      
       <div class="flex items-center space-x-4">
-        <span id="userName" class="text-xs text-slate-400 font-mono"></span>
-        <button id="logoutBtn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition">Logout</button>
+        <div class="text-right hidden sm:block">
+          <p id="userInfo" class="text-xs font-semibold text-slate-200">Loading...</p>
+          <p class="text-[10px] text-slate-400">Resident</p>
+        </div>
+        <button id="logoutBtn" class="px-3.5 py-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors">
+          Logout
+        </button>
       </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="border-b border-slate-800/80 bg-slate-900/20">
+    <div class="max-w-6xl mx-auto px-4 flex space-x-2">
+      <button id="tabIssues" class="px-6 py-2.5 text-xs font-bold text-indigo-400 border-b-2 border-indigo-500 transition-colors">
+        Maintenance Issues
+      </button>
+      <button id="tabGatePass" class="px-6 py-2.5 text-xs font-bold text-slate-400 hover:text-white transition-colors">
+        Gate Pass Requests
+      </button>
     </div>
   </nav>
 
-  <div class="max-w-7xl mx-auto px-6 py-8 space-y-8">
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+  <!-- Main Content Area -->
+  <main class="max-w-6xl mx-auto px-4 py-8 flex-1 w-full">
+    
+    <!-- SECTION 1: ISSUES -->
+    <section id="issuesSection" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       
-      <!-- 🛠️ Maintenance Complaint Form -->
-      <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-xl space-y-4">
-        <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-          <i data-lucide="wrench" class="w-5 h-5 text-indigo-400"></i>
-          <span>Report Maintenance Issue</span>
-        </h2>
+      <!-- Issue Form -->
+      <div class="lg:col-span-1 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl h-fit">
+        <h2 class="text-base font-bold text-white mb-1">Report an Issue</h2>
+        <p class="text-xs text-slate-400 mb-6">Submit a maintenance or room repair ticket.</p>
+
+        <form id="raiseIssueForm" class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Issue Title</label>
+            <input type="text" id="titleInput" required placeholder="e.g. Fan not working"
+              class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 transition-colors">
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Category</label>
+              <select id="categoryInput" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+                <option value="Electrical">Electrical</option>
+                <option value="Plumbing">Plumbing</option>
+                <option value="Furniture">Furniture</option>
+                <option value="Cleaning">Cleaning</option>
+                <option value="Internet">Internet</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Urgency</label>
+              <select id="urgencyInput" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Room Number</label>
+            <input type="text" id="roomInput" placeholder="Leave empty to use assigned room"
+              class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 transition-colors">
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Description</label>
+            <textarea id="descInput" rows="3" required placeholder="Describe the issue in detail..."
+              class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 transition-colors resize-none"></textarea>
+          </div>
+
+          <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs shadow-lg shadow-indigo-600/20 transition-all">
+            Submit Issue Request
+          </button>
+        </form>
+      </div>
+
+      <!-- Issues List -->
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <h2 class="text-base font-bold text-white mb-1">My Reported Issues</h2>
+        <p class="text-xs text-slate-400 mb-6">Track the status of your reported maintenance requests.</p>
         
-        <form id="issueForm" class="space-y-4">
+        <div id="myIssuesList" class="space-y-3">
+          <p class="text-xs text-slate-500 text-center py-6">Loading issues...</p>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- SECTION 2: GATE PASS -->
+    <section id="gatePassSection" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      <!-- Gate Pass Request Form -->
+      <div class="lg:col-span-1 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl h-fit">
+        <h2 class="text-base font-bold text-white mb-1">Request Gate Pass</h2>
+        <p class="text-xs text-slate-400 mb-6">Apply for permission to temporarily leave campus.</p>
+
+        <form id="requestPassForm" class="space-y-4">
           <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1">Room Number</label>
-            <input type="text" id="roomNumber" required placeholder="e.g. 302" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500">
+            <label class="block text-xs font-medium text-slate-300 mb-1">Destination</label>
+            <input type="text" id="passDest" required placeholder="e.g. Home, Market, City Center"
+              class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 transition-colors">
           </div>
+
           <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1">Issue Description</label>
-            <textarea id="description" required rows="3" placeholder="Describe the problem..." class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500"></textarea>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Reason</label>
+            <input type="text" id="passReason" required placeholder="e.g. Family visit, Medical appointment"
+              class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 transition-colors">
           </div>
+
           <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1">Priority Level</label>
-            <select id="priority" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500">
-              <option value="LOW">Low (SLA 48 Hours)</option>
-              <option value="MEDIUM" selected>Medium (SLA 24 Hours)</option>
-              <option value="HIGH">High (SLA 6 Hours)</option>
-            </select>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Out Date & Time</label>
+            <input type="datetime-local" id="passOutDate" required
+              class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
           </div>
-          <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-sm transition">Submit Ticket</button>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Expected Return Date & Time</label>
+            <input type="datetime-local" id="passInDate" required
+              class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+          </div>
+
+          <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs shadow-lg shadow-indigo-600/20 transition-all">
+            Submit Pass Request
+          </button>
         </form>
       </div>
 
-      <!-- 🎫 Visitor Gate Pass Request Form -->
-      <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-xl space-y-4">
-        <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-          <i data-lucide="qr-code" class="w-5 h-5 text-amber-400"></i>
-          <span>Generate Visitor Gate Pass</span>
-        </h2>
-
-        <form id="passForm" class="space-y-4">
-          <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1">Visitor Name</label>
-            <input type="text" id="visitorName" required placeholder="Full Name" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1">Visitor Phone</label>
-            <input type="text" id="visitorPhone" required placeholder="10-digit mobile number" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500">
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-medium text-slate-400 mb-1">Relation</label>
-              <input type="text" id="relation" required placeholder="Parent/Friend" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500">
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-400 mb-1">Validity (Hours)</label>
-              <input type="number" id="hoursValid" value="12" min="1" max="48" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500">
-            </div>
-          </div>
-          <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-sm transition">Generate Pass</button>
-        </form>
+      <!-- Gate Passes List -->
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <h2 class="text-base font-bold text-white mb-1">My Gate Passes</h2>
+        <p class="text-xs text-slate-400 mb-6">Track approvals and security logs for your gate passes.</p>
+        
+        <div id="myPassesList" class="space-y-3">
+          <p class="text-xs text-slate-500 text-center py-6">Loading gate passes...</p>
+        </div>
       </div>
 
-    </div>
+    </section>
 
-    <!-- Active Gate Passes Section -->
-    <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-xl space-y-4">
-      <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-        <i data-lucide="ticket" class="w-5 h-5 text-amber-400"></i>
-        <span>My Active Visitor Gate Passes</span>
-      </h2>
-      <div id="passesList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <p class="text-slate-400 text-sm">Loading gate passes...</p>
-      </div>
-    </div>
-
-    <!-- Ticket History Section -->
-    <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-xl space-y-4">
-      <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-        <i data-lucide="history" class="w-5 h-5 text-indigo-400"></i>
-        <span>My Raised Complaints</span>
-      </h2>
-      <div id="ticketsList" class="space-y-3">
-        <p class="text-slate-400 text-sm">Loading complaint history...</p>
-      </div>
-    </div>
-
-  </div>
+  </main>
 
   <script>
-    const user = JSON.parse(localStorage.getItem('user'));
     const token = localStorage.getItem('token');
+    let user = {};
 
-    if (!token || user?.role !== 'RESIDENT') {
-      window.location.href = '/index.html';
-    }
+    try { user = JSON.parse(localStorage.getItem('user') || '{}'); } catch (err) {}
 
-    document.getElementById('userName').textContent = `${user.name} (${user.email})`;
+    if (!token) window.location.href = '/index.html';
+
+    document.getElementById('userInfo').innerText = `${user.name || 'Resident'} (${user.roomNumber || 'Room N/A'})`;
 
     document.getElementById('logoutBtn').addEventListener('click', () => {
       localStorage.clear();
       window.location.href = '/index.html';
     });
 
-    // 1. Submit Maintenance Ticket
-    document.getElementById('issueForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const roomNumber = document.getElementById('roomNumber').value;
-      const description = document.getElementById('description').value;
-      const priority = document.getElementById('priority').value;
+    // Tab Navigation
+    const tabIssues = document.getElementById('tabIssues');
+    const tabGatePass = document.getElementById('tabGatePass');
+    const issuesSection = document.getElementById('issuesSection');
+    const gatePassSection = document.getElementById('gatePassSection');
 
+    tabIssues.addEventListener('click', () => {
+      tabIssues.className = "px-6 py-2.5 text-xs font-bold text-indigo-400 border-b-2 border-indigo-500 transition-colors";
+      tabGatePass.className = "px-6 py-2.5 text-xs font-bold text-slate-400 hover:text-white transition-colors";
+      issuesSection.classList.remove('hidden');
+      gatePassSection.classList.add('hidden');
+    });
+
+    tabGatePass.addEventListener('click', () => {
+      tabGatePass.className = "px-6 py-2.5 text-xs font-bold text-indigo-400 border-b-2 border-indigo-500 transition-colors";
+      tabIssues.className = "px-6 py-2.5 text-xs font-bold text-slate-400 hover:text-white transition-colors";
+      gatePassSection.classList.remove('hidden');
+      issuesSection.classList.add('hidden');
+      fetchMyPasses();
+    });
+
+    // Submit Issue Request
+    document.getElementById('raiseIssueForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
       try {
         const res = await fetch('/api/issues', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+          headers: { 
+            'Content-Type': 'application/json', 
+            'Authorization': `Bearer ${token}` 
           },
-          body: JSON.stringify({ roomNumber, description, priority })
+          body: JSON.stringify({
+            title: document.getElementById('titleInput').value,
+            category: document.getElementById('categoryInput').value,
+            urgency: document.getElementById('urgencyInput').value,
+            roomNumber: document.getElementById('roomInput').value || user.roomNumber,
+            description: document.getElementById('descInput').value
+          })
         });
 
-        if (res.ok) {
-          document.getElementById('description').value = '';
-          fetchMyTickets();
+        if (res.ok) { 
+          alert('Issue reported successfully!');
+          e.target.reset(); 
+          fetchMyIssues(); 
+        } else {
+          const errData = await res.json();
+          alert(errData.message || 'Failed to submit issue.');
         }
-      } catch (err) { console.error(err); }
+      } catch (err) { 
+        alert('Network error submitting issue.'); 
+      }
     });
 
-    // 2. Submit Gate Pass Request
-    document.getElementById('passForm').addEventListener('submit', async (e) => {
+    // Fetch My Issues
+    async function fetchMyIssues() {
+      const container = document.getElementById('myIssuesList');
+      try {
+        const res = await fetch('/api/issues/my', { 
+          headers: { 'Authorization': `Bearer ${token}` } 
+        });
+        const issues = await res.json();
+
+        if (!res.ok || !Array.isArray(issues) || issues.length === 0) {
+          container.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">No reported issues found.</p>`;
+          return;
+        }
+
+        container.innerHTML = issues.map(i => `
+          <div class="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-white">${i.title}</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+                i.status === 'RESOLVED' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+              }">${i.status}</span>
+            </div>
+            <p class="text-[11px] text-slate-300">${i.description}</p>
+            <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-800/60">
+              <span>Category: ${i.category}</span>
+              <span>Urgency: ${i.urgency}</span>
+            </div>
+          </div>`).join('');
+      } catch (err) { 
+        container.innerHTML = `<p class="text-xs text-rose-400 text-center py-4">Error loading issues.</p>`; 
+      }
+    }
+
+    // Submit Gate Pass Request
+    document.getElementById('requestPassForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const visitorName = document.getElementById('visitorName').value;
-      const visitorPhone = document.getElementById('visitorPhone').value;
-      const relation = document.getElementById('relation').value;
-      const hoursValid = document.getElementById('hoursValid').value;
+
+      const destination = document.getElementById('passDest').value;
+      const reason = document.getElementById('passReason').value;
+      const outDate = document.getElementById('passOutDate').value;
+      const inDate = document.getElementById('passInDate').value;
 
       try {
-        const res = await fetch('/api/passes/request', {
+        const res = await fetch('/api/pass', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+          headers: { 
+            'Content-Type': 'application/json', 
+            'Authorization': `Bearer ${token}` 
           },
-          body: JSON.stringify({ visitorName, visitorPhone, relation, hoursValid })
+          body: JSON.stringify({ destination, reason, outDate, inDate })
         });
 
+        const data = await res.json();
+
         if (res.ok) {
-          document.getElementById('visitorName').value = '';
-          document.getElementById('visitorPhone').value = '';
-          document.getElementById('relation').value = '';
+          alert('Gate pass requested successfully!');
+          e.target.reset();
           fetchMyPasses();
+        } else {
+          alert(`Error: ${data.message || 'Could not request gate pass.'}`);
         }
-      } catch (err) { console.error(err); }
+      } catch (err) {
+        console.error('Request Pass Error:', err);
+        alert('Network error while requesting gate pass.');
+      }
     });
 
-    // Fetch Resident's Passes
+    // Fetch My Gate Passes
     async function fetchMyPasses() {
+      const container = document.getElementById('myPassesList');
       try {
-        const res = await fetch('/api/passes/my-passes', {
-          headers: { 'Authorization': `Bearer ${token}` }
+        const res = await fetch('/api/pass/my', { 
+          headers: { 'Authorization': `Bearer ${token}` } 
         });
         const passes = await res.json();
-        const container = document.getElementById('passesList');
 
-        if (passes.length === 0) {
-          container.innerHTML = `<p class="text-slate-400 text-sm col-span-full">No gate passes created yet.</p>`;
+        if (!res.ok || !Array.isArray(passes) || passes.length === 0) {
+          container.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">No gate passes requested.</p>`;
           return;
         }
 
         container.innerHTML = passes.map(p => `
-          <div class="p-4 bg-slate-900 border border-slate-700/80 rounded-xl space-y-2">
+          <div class="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
             <div class="flex items-center justify-between">
-              <span class="text-sm font-bold text-white">${p.visitorName}</span>
-              <span class="px-2 py-0.5 text-[10px] font-bold rounded ${p.status === 'APPROVED' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}">${p.status}</span>
+              <span class="text-xs font-bold text-white">Destination: ${p.destination}</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+                p.status === 'APPROVED' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                p.status === 'REJECTED' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
+                p.status === 'CHECKED_OUT' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
+                p.status === 'CHECKED_IN' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' :
+                'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+              }">${p.status}</span>
             </div>
-            <p class="text-xs text-slate-400">Relation: <span class="text-slate-200">${p.relation}</span></p>
-            <div class="p-2 bg-slate-950 border border-slate-800 rounded font-mono text-center">
-              <span class="text-[10px] text-slate-500 block">SCAN TOKEN</span>
-              <span class="text-amber-400 font-bold text-xs select-all">${p.qrToken}</span>
+            <p class="text-[11px] text-slate-300">Reason: ${p.reason}</p>
+            <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-800/60">
+              <span>Out: ${p.outDate}</span>
+              <span>In: ${p.inDate}</span>
             </div>
-          </div>
-        `).join('');
-      } catch (err) { console.error(err); }
+          </div>`).join('');
+      } catch (err) { 
+        container.innerHTML = `<p class="text-xs text-rose-400 text-center py-4">Error loading passes.</p>`; 
+      }
     }
 
-    // Fetch Resident's Complaints
-    async function fetchMyTickets() {
-      try {
-        const res = await fetch('/api/issues/my-issues', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const tickets = await res.json();
-        const container = document.getElementById('ticketsList');
-
-        if (tickets.length === 0) {
-          container.innerHTML = `<p class="text-slate-400 text-sm">No complaints submitted yet.</p>`;
-          return;
-        }
-
-        container.innerHTML = tickets.map(t => `
-          <div class="p-4 bg-slate-900 border border-slate-700/80 rounded-xl flex items-center justify-between">
-            <div>
-              <span class="text-xs font-mono text-indigo-400">Room ${t.roomNumber}</span>
-              <p class="text-sm text-slate-200 font-medium">${t.description}</p>
-            </div>
-            <span class="px-2 py-1 text-xs font-bold rounded ${t.status === 'RESOLVED' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}">${t.status}</span>
-          </div>
-        `).join('');
-      } catch (err) { console.error(err); }
-    }
-
-    fetchMyPasses();
-    fetchMyTickets();
-    if (window.lucide) lucide.createIcons();
+    // Initial Load
+    fetchMyIssues();
   </script>
 </body>
 </html>

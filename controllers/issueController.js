@@ -1,66 +1,84 @@
-const Issue = require('../models/Issue');
+const Issue = require('../models/issue');
 
-// Map priority to SLA hours
-const SLA_MAP = {
-  EMERGENCY: 4,
-  HIGH: 12,
-  MEDIUM: 24,
-  LOW: 48
-};
-
-// Resident: Create new complaint
-exports.createIssue = async (req, res) => {
+// 1. Resident: Create issue
+async function createIssue(req, res) {
   try {
-    const { category, priority, description } = req.body;
-    const slaHours = SLA_MAP[priority] || 24;
+    const { title, category, description, roomNumber, urgency } = req.body;
+    const studentId = req.user.id || req.user._id;
 
-    const issue = new Issue({
-      resident: req.user.id,
-      roomNumber: req.user.roomNumber || '302',
-      category,
-      priority,
+    if (!title || !description) {
+      return res.status(400).json({ message: 'Title and description are required.' });
+    }
+
+    const newIssue = new Issue({
+      student: studentId,
+      title,
+      category: category || 'General',
       description,
-      slaHours
+      roomNumber: roomNumber || req.user.roomNumber || 'N/A',
+      urgency: urgency || 'MEDIUM'
     });
 
-    await issue.save();
-    res.status(201).json({ message: 'Complaint registered successfully', issue });
-  } catch (err) {
-    res.status(500).json({ message: 'Error logging complaint', error: err.message });
+    await newIssue.save();
+    return res.status(201).json({ message: 'Issue submitted successfully!', issue: newIssue });
+  } catch (error) {
+    console.error('Create Issue Error:', error);
+    return res.status(500).json({ message: 'Failed to create issue.', error: error.message });
   }
-};
+}
 
-// Get issues (Residents see their own; Wardens see ALL)
-exports.getIssues = async (req, res) => {
+// 2. Resident: Get logged-in user's issues
+async function getMyIssues(req, res) {
   try {
-    let query = {};
-    if (req.user.role === 'RESIDENT') {
-      query.resident = req.user.id;
-    }
+    const studentId = req.user.id || req.user._id;
+    const issues = await Issue.find({ student: studentId }).sort({ createdAt: -1 });
+    return res.status(200).json(issues);
+  } catch (error) {
+    console.error('Get My Issues Error:', error);
+    return res.status(500).json({ message: 'Failed to fetch your issues.', error: error.message });
+  }
+}
 
-    const issues = await Issue.find(query)
-      .populate('resident', 'name email roomNumber phone')
+// 3. Warden: Get all issues
+async function getAllIssues(req, res) {
+  try {
+    const issues = await Issue.find()
+      .populate('student', 'name email roomNumber')
       .sort({ createdAt: -1 });
 
-    res.json(issues);
-  } catch (err) {
-    res.status(500).json({ message: 'Error fetching issues', error: err.message });
+    return res.status(200).json(issues);
+  } catch (error) {
+    console.error('Get All Issues Error:', error);
+    return res.status(500).json({ message: 'Failed to fetch issues.', error: error.message });
   }
-};
+}
 
-// Warden: Update issue status
-exports.updateIssueStatus = async (req, res) => {
+// 4. Warden: Update issue status
+async function updateIssueStatus(req, res) {
   try {
+    const { id } = req.params;
     const { status } = req.body;
-    const updateData = { status };
 
-    if (status === 'RESOLVED') {
-      updateData.resolvedAt = new Date();
+    const issue = await Issue.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    );
+
+    if (!issue) {
+      return res.status(404).json({ message: 'Issue not found.' });
     }
 
-    const issue = await Issue.findByIdAndUpdate(req.params.id, updateData, { new: true });
-    res.json({ message: 'Status updated', issue });
-  } catch (err) {
-    res.status(500).json({ message: 'Error updating issue status', error: err.message });
+    return res.status(200).json({ message: 'Status updated successfully', issue });
+  } catch (error) {
+    console.error('Update Status Error:', error);
+    return res.status(500).json({ message: 'Failed to update issue status.', error: error.message });
   }
+}
+
+module.exports = {
+  createIssue,
+  getMyIssues,
+  getAllIssues,
+  updateIssueStatus
 };

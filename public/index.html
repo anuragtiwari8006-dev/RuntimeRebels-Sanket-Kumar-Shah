@@ -3,218 +3,168 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HostelHub - Welcome Portal</title>
+  <title>HostelHub - Authentication</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex items-center justify-center p-4">
 
-  <div class="max-w-md w-full bg-slate-800/80 border border-slate-700/80 rounded-2xl p-8 shadow-2xl backdrop-blur-xl space-y-6">
+  <div class="bg-slate-800 border border-slate-700 p-8 rounded-2xl w-full max-w-md space-y-6 shadow-2xl">
     
-    <!-- Header Logo & Title -->
-    <div class="text-center space-y-2">
-      <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-600/20 text-indigo-400 mb-2 border border-indigo-500/30">
-        <i data-lucide="building-2" class="w-6 h-6"></i>
-      </div>
-      <h1 class="text-2xl font-bold text-white tracking-tight">HostelHub Portal</h1>
-      <p class="text-xs text-slate-400">Select your account type to proceed</p>
+    <div class="flex border-b border-slate-700">
+      <button id="showLoginTab" class="w-1/2 py-2 text-center text-sm font-bold text-indigo-400 border-b-2 border-indigo-500">Sign In</button>
+      <button id="showRegisterTab" class="w-1/2 py-2 text-center text-sm font-bold text-slate-400 hover:text-white">Register</button>
     </div>
 
-    <!-- Toggle Switch: Old vs New User -->
-    <div class="grid grid-cols-2 p-1 bg-slate-900 rounded-xl border border-slate-700/60">
-      <button id="oldUserTab" onclick="switchTab('LOGIN')" class="py-2 text-xs font-bold rounded-lg transition-all duration-200 bg-indigo-600 text-white shadow-md">
-        Old User (Login)
-      </button>
-      <button id="newUserTab" onclick="switchTab('REGISTER')" class="py-2 text-xs font-bold rounded-lg transition-all duration-200 text-slate-400 hover:text-white">
-        New User (Register)
-      </button>
-    </div>
-
-    <!-- 1. OLD USER FORM (LOGIN) -->
+    <!-- LOGIN FORM -->
     <form id="loginForm" class="space-y-4">
       <div>
         <label class="block text-xs font-medium text-slate-400 mb-1">Email Address</label>
-        <div class="relative">
-          <i data-lucide="mail" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
-          <input type="email" id="loginEmail" required placeholder="name@hostelhub.com" class="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
-        </div>
+        <input type="email" id="loginEmail" required placeholder="anurag@hostelhub.com" class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
       </div>
 
       <div>
         <label class="block text-xs font-medium text-slate-400 mb-1">Password</label>
-        <div class="relative">
-          <i data-lucide="lock" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
-          <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
-        </div>
+        <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
       </div>
 
-      <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-indigo-600/30">
-        Log In
+      <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs transition shadow-lg shadow-indigo-600/30">
+        Sign In
       </button>
     </form>
 
-    <!-- 2. NEW USER FORM (REGISTER) -->
+    <!-- REGISTER FORM -->
     <form id="registerForm" class="space-y-4 hidden">
       <div>
         <label class="block text-xs font-medium text-slate-400 mb-1">Full Name</label>
-        <div class="relative">
-          <i data-lucide="user" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
-          <input type="text" id="regName" required placeholder="Anurag Tiwari" class="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
-        </div>
+        <input type="text" id="regName" required placeholder="Anurag Tiwari" class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
       </div>
 
       <div>
         <label class="block text-xs font-medium text-slate-400 mb-1">Email Address</label>
-        <div class="relative">
-          <i data-lucide="mail" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
-          <input type="email" id="regEmail" required placeholder="name@hostelhub.com" class="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
-        </div>
+        <input type="email" id="regEmail" required placeholder="anurag@hostelhub.com" class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
       </div>
 
       <div>
-        <label class="block text-xs font-medium text-slate-400 mb-1">Create Password</label>
-        <div class="relative">
-          <i data-lucide="key" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
-          <input type="password" id="regPassword" required minlength="6" placeholder="Min 6 characters" class="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
-        </div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Password</label>
+        <input type="password" id="regPassword" required minlength="6" placeholder="••••••••" class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
       </div>
 
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">Account Role</label>
-          <select id="regRole" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
-            <option value="RESIDENT" selected>Resident</option>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Role</label>
+          <select id="regRole" class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
+            <option value="RESIDENT">Resident</option>
             <option value="WARDEN">Warden</option>
-            <option value="SECURITY">Security</option>
+            <option value="SECURITY">Security Guard</option>
           </select>
         </div>
-
         <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">Room No. (Optional)</label>
-          <input type="text" id="regRoom" placeholder="e.g. 302" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
+          <label class="block text-xs font-medium text-slate-400 mb-1">Room Number</label>
+          <input type="text" id="regRoom" placeholder="102-B" class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
         </div>
       </div>
 
-      <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-emerald-600/30">
+      <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs transition shadow-lg shadow-indigo-600/30">
         Create Account
       </button>
     </form>
 
-    <!-- Feedback Alert Box -->
-    <div id="alertBox" class="hidden p-3 rounded-xl text-xs font-medium border text-center"></div>
-
+    <div id="authMsg" class="text-xs text-center hidden"></div>
   </div>
 
   <script>
-    // Clear any previous session on portal load so login is always required
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    const loginTab = document.getElementById('showLoginTab');
+    const registerTab = document.getElementById('showRegisterTab');
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const authMsg = document.getElementById('authMsg');
 
-    // Tab Switching Functionality
-    function switchTab(type) {
-      const loginForm = document.getElementById('loginForm');
-      const registerForm = document.getElementById('registerForm');
-      const oldUserTab = document.getElementById('oldUserTab');
-      const newUserTab = document.getElementById('newUserTab');
-      hideAlert();
-
-      if (type === 'REGISTER') {
-        loginForm.classList.add('hidden');
-        registerForm.classList.remove('hidden');
-        newUserTab.className = "py-2 text-xs font-bold rounded-lg transition-all duration-200 bg-indigo-600 text-white shadow-md";
-        oldUserTab.className = "py-2 text-xs font-bold rounded-lg transition-all duration-200 text-slate-400 hover:text-white";
-      } else {
-        registerForm.classList.add('hidden');
-        loginForm.classList.remove('hidden');
-        oldUserTab.className = "py-2 text-xs font-bold rounded-lg transition-all duration-200 bg-indigo-600 text-white shadow-md";
-        newUserTab.className = "py-2 text-xs font-bold rounded-lg transition-all duration-200 text-slate-400 hover:text-white";
-      }
-    }
-
-    // Alert Notification Helpers
-    function showAlert(msg, isSuccess) {
-      const box = document.getElementById('alertBox');
-      box.classList.remove('hidden');
-      box.textContent = msg;
-      if (isSuccess) {
-        box.className = "p-3 rounded-xl text-xs font-medium border text-center border-emerald-500/50 bg-emerald-950/40 text-emerald-300";
-      } else {
-        box.className = "p-3 rounded-xl text-xs font-medium border text-center border-rose-500/50 bg-rose-950/40 text-rose-300";
-      }
-    }
-
-    function hideAlert() {
-      document.getElementById('alertBox').classList.add('hidden');
-    }
-
-    // Role-based Redirection
     function redirectUser(role) {
-      if (role === 'RESIDENT') window.location.href = '/resident.html';
-      else if (role === 'WARDEN') window.location.href = '/warden.html';
+      if (role === 'WARDEN') window.location.href = '/warden.html';
       else if (role === 'SECURITY') window.location.href = '/security.html';
+      else window.location.href = '/resident.html';
     }
 
-    // 1. Handle Login (Old User)
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    loginTab.addEventListener('click', () => {
+      loginTab.className = "w-1/2 py-2 text-center text-sm font-bold text-indigo-400 border-b-2 border-indigo-500";
+      registerTab.className = "w-1/2 py-2 text-center text-sm font-bold text-slate-400 hover:text-white";
+      loginForm.classList.remove('hidden');
+      registerForm.classList.add('hidden');
+      authMsg.classList.add('hidden');
+    });
+
+    registerTab.addEventListener('click', () => {
+      registerTab.className = "w-1/2 py-2 text-center text-sm font-bold text-indigo-400 border-b-2 border-indigo-500";
+      loginTab.className = "w-1/2 py-2 text-center text-sm font-bold text-slate-400 hover:text-white";
+      registerForm.classList.remove('hidden');
+      loginForm.classList.add('hidden');
+      authMsg.classList.add('hidden');
+    });
+
+    loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = document.getElementById('loginEmail').value;
-      const password = document.getElementById('loginPassword').value;
+      authMsg.classList.add('hidden');
 
       try {
         const res = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({
+            email: document.getElementById('loginEmail').value,
+            password: document.getElementById('loginPassword').value
+          })
         });
 
         const data = await res.json();
-
         if (res.ok) {
           localStorage.setItem('token', data.token);
           localStorage.setItem('user', JSON.stringify(data.user));
-          showAlert('Login successful! Redirecting...', true);
-          setTimeout(() => redirectUser(data.user.role), 1000);
+          redirectUser(data.user.role);
         } else {
-          showAlert(data.message || 'Login failed', false);
+          authMsg.innerText = data.message || 'Login failed.';
+          authMsg.style.color = '#f87171';
+          authMsg.classList.remove('hidden');
         }
       } catch (err) {
-        showAlert('Network error. Check server logs.', false);
+        authMsg.innerText = 'Network error.';
+        authMsg.style.color = '#f87171';
+        authMsg.classList.remove('hidden');
       }
     });
 
-    // 2. Handle Registration (New User)
-    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const name = document.getElementById('regName').value;
-      const email = document.getElementById('regEmail').value;
-      const password = document.getElementById('regPassword').value;
-      const role = document.getElementById('regRole').value;
-      const roomNumber = document.getElementById('regRoom').value;
+      authMsg.classList.add('hidden');
 
       try {
         const res = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, password, role, roomNumber })
+          body: JSON.stringify({
+            name: document.getElementById('regName').value,
+            email: document.getElementById('regEmail').value,
+            password: document.getElementById('regPassword').value,
+            role: document.getElementById('regRole').value,
+            roomNumber: document.getElementById('regRoom').value
+          })
         });
 
         const data = await res.json();
-
         if (res.ok) {
-          showAlert('Account created successfully! Switch to Login.', true);
-          setTimeout(() => {
-            switchTab('LOGIN');
-            document.getElementById('loginEmail').value = email;
-          }, 1500);
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          redirectUser(data.user.role);
         } else {
-          showAlert(data.message || 'Registration failed', false);
+          authMsg.innerText = data.message || 'Registration failed.';
+          authMsg.style.color = '#f87171';
+          authMsg.classList.remove('hidden');
         }
       } catch (err) {
-        showAlert('Network error. Check server logs.', false);
+        authMsg.innerText = 'Network error.';
+        authMsg.style.color = '#f87171';
+        authMsg.classList.remove('hidden');
       }
     });
-
-    if (window.lucide) lucide.createIcons();
   </script>
 </body>
 </html>

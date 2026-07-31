@@ -1,174 +1,128 @@
-const VisitorPass = require('../models/VisitorPass'); // or '../models/visitorpass' depending on your filename
-const SystemSettings = require('../models/SystemSettings'); // or '../models/SystemSetting'
-const maskPhoneNumber = require('../utils/maskPhone'); // or '../utils/maskphone'
+const VisitorPass = require('../models/VisitorPass');
 
-// 1. Resident: Request a Visitor Gate Pass (Defaults to PENDING now)
-exports.createPass = async (req, res) => {
+// 1. Resident: Create Gate Pass Request
+async function createGatePass(req, res) {
   try {
-    const { visitorName, visitorPhone, relation, hoursValid } = req.body;
-    
-    const qrToken = `PASS-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-    
-    const validUntil = new Date();
-    validUntil.setHours(validUntil.getHours() + (parseInt(hoursValid) || 12));
+    const { reason, destination, outDate, inDate } = req.body;
+    const studentId = req.user?.id;
+
+    if (!studentId) {
+      return res.status(401).json({ message: 'User identity missing from token.' });
+    }
+
+    if (!reason || !destination || !outDate || !inDate) {
+      return res.status(400).json({ message: 'All fields (destination, reason, outDate, inDate) are required.' });
+    }
 
     const pass = new VisitorPass({
-      resident: req.user.id,
-      visitorName,
-      visitorPhone,
-      relation,
-      validUntil,
-      qrToken,
-      status: 'PENDING' // 👈 NOW REQUIRES WARDEN APPROVAL FIRST
+      student: studentId,
+      reason,
+      destination,
+      outDate,
+      inDate
     });
 
     await pass.save();
-    res.status(201).json({ message: 'Gate Pass requested! Awaiting Warden approval.', pass });
-  } catch (err) {
-    res.status(500).json({ message: 'Error generating pass', error: err.message });
+    return res.status(201).json({ message: 'Gate Pass requested successfully!', pass });
+  } catch (error) {
+    console.error('Create Pass Error:', error);
+    return res.status(500).json({ message: 'Failed to request Gate Pass.', error: error.message });
   }
-};
+}
 
-// 2. Warden: Get all PENDING passes requiring approval
-exports.getPendingPasses = async (req, res) => {
+// 2. Resident: Get My Gate Passes
+async function getMyGatePasses(req, res) {
   try {
-    const passes = await VisitorPass.find({ status: 'PENDING' }).populate('resident', 'name roomNumber');
-    res.json(passes);
-  } catch (err) {
-    res.status(500).json({ message: 'Error fetching pending passes', error: err.message });
+    const studentId = req.user?.id;
+    const passes = await VisitorPass.find({ student: studentId }).sort({ createdAt: -1 });
+    return res.status(200).json(passes);
+  } catch (error) {
+    console.error('Get My Passes Error:', error);
+    return res.status(500).json({ message: 'Failed to fetch gate passes.', error: error.message });
   }
-};
+}
 
-// 3. Warden: Approve or Reject a Pass
-exports.updatePassStatus = async (req, res) => {
+// 3. Warden: Get All Gate Passes
+async function getAllGatePasses(req, res) {
+  try {
+    const passes = await VisitorPass.find()
+      .populate('student', 'name email roomNumber')
+      .sort({ createdAt: -1 });
+    return res.status(200).json(passes);
+  } catch (error) {
+    console.error('Get All Passes Error:', error);
+    return res.status(500).json({ message: 'Failed to fetch gate passes.', error: error.message });
+  }
+}
+
+// 4. Warden: Approve or Reject Pass
+async function updatePassStatus(req, res) {
   try {
     const { id } = req.params;
-    const { status } = req.body; // 'APPROVED' or 'REJECTED'
+    const { status } = req.body;
 
     if (!['APPROVED', 'REJECTED'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid status' });
+      return res.status(400).json({ message: 'Invalid status action.' });
     }
 
     const pass = await VisitorPass.findByIdAndUpdate(id, { status }, { new: true });
-    res.json({ message: `Pass ${status.toLowerCase()} successfully`, pass });
-  } catch (err) {
-    res.status(500).json({ message: 'Error updating pass status', error: err.message });
+    if (!pass) return res.status(404).json({ message: 'Gate pass not found.' });
+
+    return res.status(200).json({ message: `Gate pass ${status.toLowerCase()}!`, pass });
+  } catch (error) {
+    console.error('Update Pass Status Error:', error);
+    return res.status(500).json({ message: 'Failed to update pass.', error: error.message });
   }
-};
+}
 
-// 4. Resident: Fetch active/history passes
-exports.getResidentPasses = async (req, res) => {
+// 5. Guard: Get Active Approved/Checked-Out Passes
+async function getGuardPasses(req, res) {
   try {
-    const passes = await VisitorPass.find({ resident: req.user.id }).sort({ createdAt: -1 });
-    res.json(passes);
-  } catch (err) {
-    res.status(500).json({ message: 'Error fetching passes', error: err.message });
+    const passes = await VisitorPass.find({
+      status: { $in: ['APPROVED', 'CHECKED_OUT'] }
+    })
+    .populate('student', 'name email roomNumber')
+    .sort({ createdAt: -1 });
+
+    return res.status(200).json(passes);
+  } catch (error) {
+    console.error('Get Guard Passes Error:', error);
+    return res.status(500).json({ message: 'Failed to fetch guard passes.', error: error.message });
   }
-};
+}
 
-// 5. Security Guard: Verify Pass (Rejects PENDING passes automatically!)
-exports.verifyPass = async (req, res) => {
+// 6. Guard: Mark Exit or Entry
+async function markCheckOutIn(req, res) {
   try {
-    const settings = await SystemSettings.findOne();
-    if (settings && settings.isLockdownActive) {
-      return res.status(403).json({ 
-        allowed: false, 
-        message: '🚨 GATE LOCKDOWN ACTIVE: All entry/exit passes suspended by Warden!' 
-      });
-    }
+    const { id } = req.params;
+    const { action } = req.body;
 
-    const { qrToken } = req.body;
-    const pass = await VisitorPass.findOne({ qrToken }).populate('resident', 'name roomNumber');
-
-    if (!pass) {
-      return res.status(404).json({ allowed: false, message: 'Invalid or Fraudulent QR Pass' });
-    }
-
-    // Block scanning if Warden hasn't approved yet!
-    if (pass.status === 'PENDING') {
-      return res.status(403).json({ allowed: false, message: 'Pass is still PENDING Warden approval!' });
-    }
-
-    if (new Date() > new Date(pass.validUntil)) {
-      pass.status = 'REJECTED';
-      await pass.save();
-      return res.status(400).json({ allowed: false, message: 'Pass Expired' });
-    }
-
-    if (pass.status === 'APPROVED') {
-      pass.status = 'CHECKED_IN';
-      pass.entryTime = new Date();
-      await pass.save();
-
-      return res.json({
-        allowed: true,
-        action: 'CHECK_IN',
-        message: 'Entry Approved! Visitor Checked In.',
-        pass: {
-          visitorName: pass.visitorName,
-          visitorPhoneMasked: maskPhoneNumber(pass.visitorPhone),
-          relation: pass.relation,
-          residentName: pass.resident.name,
-          roomNumber: pass.resident.roomNumber,
-          status: pass.status
-        }
-      });
-    } else if (pass.status === 'CHECKED_IN') {
-      pass.status = 'CHECKED_OUT';
-      pass.exitTime = new Date();
-      await pass.save();
-
-      return res.json({
-        allowed: true,
-        action: 'CHECK_OUT',
-        message: 'Exit Approved! Visitor Checked Out.',
-        pass: {
-          visitorName: pass.visitorName,
-          visitorPhoneMasked: maskPhoneNumber(pass.visitorPhone),
-          relation: pass.relation,
-          residentName: pass.resident.name,
-          roomNumber: pass.resident.roomNumber,
-          status: pass.status
-        }
-      });
+    const updateData = {};
+    if (action === 'CHECK_OUT') {
+      updateData.status = 'CHECKED_OUT';
+      updateData.securityCheckedOutAt = new Date();
+    } else if (action === 'CHECK_IN') {
+      updateData.status = 'CHECKED_IN';
+      updateData.securityCheckedInAt = new Date();
     } else {
-      return res.status(400).json({ 
-        allowed: false, 
-        message: `Pass cannot be used (${pass.status}).` 
-      });
-    }
-  } catch (err) {
-    res.status(500).json({ message: 'Error processing pass scan', error: err.message });
-  }
-};
-
-// 6. Warden: Toggle Emergency Gate Lockdown
-exports.toggleLockdown = async (req, res) => {
-  try {
-    let settings = await SystemSettings.findOne();
-    if (!settings) {
-      settings = new SystemSettings({ isLockdownActive: false });
+      return res.status(400).json({ message: 'Invalid security action.' });
     }
 
-    settings.isLockdownActive = !settings.isLockdownActive;
-    settings.updatedBy = req.user.id;
-    await settings.save();
+    const pass = await VisitorPass.findByIdAndUpdate(id, updateData, { new: true });
+    if (!pass) return res.status(404).json({ message: 'Gate pass not found.' });
 
-    res.json({ 
-      isLockdownActive: settings.isLockdownActive, 
-      message: settings.isLockdownActive ? '🚨 Gate Lockdown Activated' : '✅ Lockdown Lifted' 
-    });
-  } catch (err) {
-    res.status(500).json({ message: 'Error toggling lockdown', error: err.message });
+    return res.status(200).json({ message: `Status updated successfully!`, pass });
+  } catch (error) {
+    console.error('Security Action Error:', error);
+    return res.status(500).json({ message: 'Failed to update pass status.', error: error.message });
   }
-};
+}
 
-// 7. Public/Guard: Check current lockdown status
-exports.getLockdownStatus = async (req, res) => {
-  try {
-    let settings = await SystemSettings.findOne();
-    res.json({ isLockdownActive: settings ? settings.isLockdownActive : false });
-  } catch (err) {
-    res.json({ isLockdownActive: false });
-  }
+module.exports = {
+  createGatePass,
+  getMyGatePasses,
+  getAllGatePasses,
+  updatePassStatus,
+  getGuardPasses,
+  markCheckOutIn
 };

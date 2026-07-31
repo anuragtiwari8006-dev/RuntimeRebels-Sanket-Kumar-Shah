@@ -1,11 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const { createIssue, getIssues, updateIssueStatus } = require('../controllers/issueController');
-const verifyToken = require('../middleware/authMiddleware');
-const authorizeRoles = require('../middleware/roleMiddleware');
+const authMiddleware = require('../middleware/authMiddleware');
+const { 
+  createIssue, 
+  getMyIssues, 
+  getAllIssues, 
+  updateIssueStatus 
+} = require('../controllers/issueController');
 
-router.post('/', verifyToken, authorizeRoles('RESIDENT'), createIssue);
-router.get('/', verifyToken, authorizeRoles('RESIDENT', 'WARDEN'), getIssues);
-router.patch('/:id/status', verifyToken, authorizeRoles('WARDEN'), updateIssueStatus);
+// Student endpoints
+router.post('/', authMiddleware, createIssue);
+router.get('/my', authMiddleware, getMyIssues);
+
+// Warden endpoints
+router.get('/all', authMiddleware, getAllIssues);
+router.patch('/:id/status', authMiddleware, updateIssueStatus);
+router.put('/:id/status', authMiddleware, updateIssueStatus);
 
 module.exports = router;

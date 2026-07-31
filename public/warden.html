@@ -3,287 +3,137 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HostelHub - Warden Command Center</title>
+  <title>Warden Portal - HostelHub</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen">
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans flex flex-col">
 
-  <!-- Top Navigation Bar -->
-  <nav class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <i data-lucide="shield-alert" class="w-8 h-8 text-rose-500"></i>
-        <span class="text-xl font-bold text-white">Warden Command Center</span>
-      </div>
-      <button id="logoutBtn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition">Logout</button>
+  <nav class="bg-slate-800/80 border-b border-slate-700/80 backdrop-blur-xl sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="font-bold text-white text-lg">HostelHub <span class="text-xs font-normal text-indigo-400">(Warden Dashboard)</span></div>
+      <button id="logoutBtn" class="px-3 py-1.5 bg-rose-600/20 text-rose-300 border border-rose-500/30 rounded-xl text-xs hover:bg-rose-600 hover:text-white transition">Logout</button>
     </div>
   </nav>
 
-  <div class="max-w-7xl mx-auto px-6 py-8 space-y-8">
+  <main class="max-w-7xl mx-auto px-4 py-8 space-y-6 flex-1 w-full">
 
-    <!-- 1. One-Tap Emergency Gate Lockdown Box (Dynamic State) -->
-    <div id="lockdownCard" class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-xl flex items-center justify-between transition-all duration-300">
-      <div>
-        <h3 id="lockdownTitle" class="text-lg font-bold text-slate-200 flex items-center space-x-2">
-          <i data-lucide="shield" class="w-5 h-5 text-indigo-400"></i>
-          <span>Perimeter Gate Protocol</span>
-        </h3>
-        <p id="lockdownSubtitle" class="text-xs text-slate-400 mt-1">Status: Gates operating normally.</p>
-      </div>
-
-      <button id="lockdownToggleBtn" class="px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-lg flex items-center space-x-2">
-        <span>Initiate Lockdown</span>
-      </button>
+    <div class="flex border-b border-slate-700">
+      <button id="tabIssues" class="px-6 py-2.5 text-xs font-bold text-indigo-400 border-b-2 border-indigo-500">Student Complaints</button>
+      <button id="tabGatePass" class="px-6 py-2.5 text-xs font-bold text-slate-400 hover:text-white">Gate Pass Requests</button>
     </div>
 
-    <!-- 2. Pending Gate Pass Approval Requests -->
-    <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-xl space-y-4">
-      <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-        <i data-lucide="qr-code" class="w-5 h-5 text-amber-400"></i>
-        <span>Pending Visitor Gate Pass Requests</span>
-      </h2>
-
-      <div id="pendingPassesList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <p class="text-slate-400 text-sm col-span-full">Loading pending gate passes...</p>
+    <!-- ISSUES SECTION -->
+    <div id="issuesSection" class="bg-slate-800 border border-slate-700/80 p-6 rounded-2xl space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+        <h2 class="font-bold text-white text-sm">All Complaints</h2>
+        <button onclick="fetchAllIssues()" class="text-xs text-indigo-400 hover:underline">Refresh</button>
       </div>
+      <div id="allIssuesList" class="space-y-3 max-h-[600px] overflow-y-auto"></div>
     </div>
 
-    <!-- 3. Real-Time Maintenance SLA Tracker -->
-    <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-xl">
-      <h2 class="text-lg font-bold text-white mb-6 flex items-center space-x-2">
-        <i data-lucide="timer" class="w-5 h-5 text-indigo-400"></i>
-        <span>Real-Time Maintenance SLA Tracker</span>
-      </h2>
-
-      <div id="wardenTicketsList" class="space-y-4">
-        <p class="text-slate-400 text-sm">Loading complaints dashboard...</p>
+    <!-- GATE PASS SECTION -->
+    <div id="gatePassSection" class="bg-slate-800 border border-slate-700/80 p-6 rounded-2xl space-y-4 shadow-xl hidden">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+        <h2 class="font-bold text-white text-sm">Gate Pass Requests</h2>
+        <button onclick="fetchAllPasses()" class="text-xs text-indigo-400 hover:underline">Refresh</button>
       </div>
+      <div id="allPassesList" class="space-y-3 max-h-[600px] overflow-y-auto"></div>
     </div>
 
-  </div>
+  </main>
 
   <script>
-    const user = JSON.parse(localStorage.getItem('user'));
     const token = localStorage.getItem('token');
-
-    if (!token || user?.role !== 'WARDEN') {
-      window.location.href = '/index.html';
-    }
+    if (!token) window.location.href = '/index.html';
 
     document.getElementById('logoutBtn').addEventListener('click', () => {
       localStorage.clear();
       window.location.href = '/index.html';
     });
 
-    // -------------------------------------------------------------
-    // FEATURE 1: Dynamic Emergency Lockdown & Retraction
-    // -------------------------------------------------------------
-    let isLockdownActive = false;
+    const tabIssues = document.getElementById('tabIssues');
+    const tabGatePass = document.getElementById('tabGatePass');
+    const issuesSection = document.getElementById('issuesSection');
+    const gatePassSection = document.getElementById('gatePassSection');
 
-    async function checkLockdownStatus() {
-      try {
-        const res = await fetch('/api/passes/lockdown/status', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        isLockdownActive = data.isLockdownActive;
-        updateLockdownUI();
-      } catch (err) { console.error('Error checking lockdown:', err); }
-    }
-
-    function updateLockdownUI() {
-      const card = document.getElementById('lockdownCard');
-      const title = document.getElementById('lockdownTitle');
-      const subtitle = document.getElementById('lockdownSubtitle');
-      const btn = document.getElementById('lockdownToggleBtn');
-
-      if (isLockdownActive) {
-        card.className = "bg-rose-950/40 border border-rose-500/80 rounded-2xl p-6 shadow-xl flex items-center justify-between transition-all duration-300";
-        title.className = "text-lg font-bold text-rose-400 flex items-center space-x-2 animate-pulse";
-        title.innerHTML = `<i data-lucide="alert-triangle" class="w-5 h-5 text-rose-500"></i><span>🚨 EMERGENCY LOCKDOWN ACTIVE</span>`;
-        subtitle.textContent = "All gate scans suspended. Revoke protocol to normalize operations.";
-        
-        btn.className = "px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-emerald-600/30";
-        btn.innerHTML = `<span>RETRACT LOCKDOWN PROTOCOL</span>`;
-      } else {
-        card.className = "bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-xl flex items-center justify-between transition-all duration-300";
-        title.className = "text-lg font-bold text-slate-200 flex items-center space-x-2";
-        title.innerHTML = `<i data-lucide="shield" class="w-5 h-5 text-indigo-400"></i><span>Perimeter Gate Protocol</span>`;
-        subtitle.textContent = "Status: Normal operations. Click below in case of emergency.";
-        
-        btn.className = "px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-rose-600/30";
-        btn.innerHTML = `<span>INITIATE EMERGENCY LOCKDOWN</span>`;
-      }
-
-      if (window.lucide) lucide.createIcons();
-    }
-
-    document.getElementById('lockdownToggleBtn').addEventListener('click', async () => {
-      try {
-        const res = await fetch('/api/passes/lockdown/toggle', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        isLockdownActive = data.isLockdownActive;
-        updateLockdownUI();
-        alert(data.message);
-      } catch (err) { console.error('Error toggling lockdown:', err); }
+    tabIssues.addEventListener('click', () => {
+      tabIssues.className = "px-6 py-2.5 text-xs font-bold text-indigo-400 border-b-2 border-indigo-500";
+      tabGatePass.className = "px-6 py-2.5 text-xs font-bold text-slate-400 hover:text-white";
+      issuesSection.classList.remove('hidden');
+      gatePassSection.classList.add('hidden');
     });
 
-    // -------------------------------------------------------------
-    // FEATURE 2: Gate Pass Approval System
-    // -------------------------------------------------------------
-    async function fetchPendingPasses() {
+    tabGatePass.addEventListener('click', () => {
+      tabGatePass.className = "px-6 py-2.5 text-xs font-bold text-indigo-400 border-b-2 border-indigo-500";
+      tabIssues.className = "px-6 py-2.5 text-xs font-bold text-slate-400 hover:text-white";
+      gatePassSection.classList.remove('hidden');
+      issuesSection.classList.add('hidden');
+      fetchAllPasses();
+    });
+
+    async function fetchAllIssues() {
+      const container = document.getElementById('allIssuesList');
       try {
-        const res = await fetch('/api/passes/pending', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const passes = await res.json();
-        const container = document.getElementById('pendingPassesList');
-
-        if (!Array.isArray(passes) || passes.length === 0) {
-          container.innerHTML = `<p class="text-slate-400 text-sm col-span-full">No pending gate pass requests.</p>`;
-          return;
-        }
-
-        container.innerHTML = passes.map(p => `
-          <div class="p-4 bg-slate-900 border border-slate-700/80 rounded-xl space-y-3">
+        const res = await fetch('/api/issues/all', { headers: { 'Authorization': `Bearer ${token}` } });
+        const issues = await res.json();
+        container.innerHTML = issues.map(i => `
+          <div class="p-3.5 bg-slate-900/60 border border-slate-700/60 rounded-xl space-y-1.5">
             <div class="flex items-center justify-between">
-              <span class="text-sm font-bold text-white">${p.visitorName}</span>
-              <span class="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
-                Room ${p.resident?.roomNumber || 'N/A'} (${p.resident?.name || 'Resident'})
-              </span>
-            </div>
-            <div class="text-xs text-slate-400 space-y-1 bg-slate-950 p-2.5 rounded border border-slate-800">
-              <p>Relation: <span class="text-slate-200 font-medium">${p.relation}</span></p>
-              <p>Phone: <span class="text-amber-400 font-mono">${p.visitorPhone}</span></p>
-            </div>
-            <div class="flex space-x-2 pt-1">
-              <button onclick="handlePassDecision('${p._id}', 'APPROVED')" class="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-lg transition">
-                Approve
-              </button>
-              <button onclick="handlePassDecision('${p._id}', 'REJECTED')" class="flex-1 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs rounded-lg transition">
-                Reject
-              </button>
-            </div>
-          </div>
-        `).join('');
-      } catch (err) { console.error('Error fetching passes:', err); }
-    }
-
-    async function handlePassDecision(id, status) {
-      try {
-        const res = await fetch(`/api/passes/${id}/status`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ status })
-        });
-        if (res.ok) fetchPendingPasses();
-      } catch (err) { console.error('Error updating pass status:', err); }
-    }
-
-    // -------------------------------------------------------------
-    // FEATURE 3: Maintenance SLA Countdown Tracker
-    // -------------------------------------------------------------
-    let ticketsData = [];
-
-    async function fetchWardenTickets() {
-      try {
-        const res = await fetch('/api/issues', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        ticketsData = await res.json();
-        renderTickets();
-      } catch (err) { console.error('Error fetching tickets:', err); }
-    }
-
-    function renderTickets() {
-      const container = document.getElementById('wardenTicketsList');
-      if (!Array.isArray(ticketsData) || ticketsData.length === 0) {
-        container.innerHTML = `<p class="text-slate-400 text-sm">No maintenance tickets active.</p>`;
-        return;
-      }
-
-      container.innerHTML = ticketsData.map(t => {
-        const createdAt = new Date(t.createdAt).getTime();
-        const slaDeadline = createdAt + (t.slaHours * 60 * 60 * 1000);
-        const now = new Date().getTime();
-        const diff = slaDeadline - now;
-
-        let timerText = '';
-        let isBreached = false;
-
-        if (t.status === 'RESOLVED') {
-          timerText = 'Resolved';
-        } else if (diff <= 0) {
-          isBreached = true;
-          timerText = 'SLA BREACHED!';
-        } else {
-          const hours = Math.floor(diff / (1000 * 60 * 60));
-          const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-          const secs = Math.floor((diff % (1000 * 60)) / 1000);
-          timerText = `${hours}h ${mins}m ${secs}s remaining`;
-        }
-
-        return `
-          <div class="p-5 bg-slate-900/90 border ${isBreached ? 'border-rose-500/80 bg-rose-950/20' : 'border-slate-700/80'} rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <div class="flex items-center space-x-2 mb-2">
-                <span class="px-2 py-0.5 text-xs font-bold rounded bg-slate-800 text-indigo-300">Room ${t.roomNumber}</span>
-                <span class="text-xs text-slate-400">${t.resident?.name || 'Resident'}</span>
-                <span class="px-2 py-0.5 text-[10px] font-bold rounded uppercase ${isBreached ? 'bg-rose-500 text-white animate-pulse' : 'bg-slate-800 text-slate-300'}">${t.priority}</span>
+              <span class="text-xs font-bold text-white">${i.title} (${i.student?.name || 'Student'})</span>
+              <div class="flex gap-2">
+                <button onclick="updateIssueStatus('${i._id}', 'IN_PROGRESS')" class="px-2 py-1 bg-blue-600/30 text-blue-300 rounded text-[10px]">In Progress</button>
+                <button onclick="updateIssueStatus('${i._id}', 'RESOLVED')" class="px-2 py-1 bg-emerald-600/30 text-emerald-300 rounded text-[10px]">Resolve</button>
               </div>
-              <p class="text-sm font-medium text-slate-100">${t.description}</p>
             </div>
-
-            <div class="flex items-center space-x-4">
-              <div class="text-right">
-                <div class="text-xs font-mono font-bold ${isBreached ? 'text-rose-400' : 'text-emerald-400'}">${timerText}</div>
-                <div class="text-[10px] text-slate-500">SLA: ${t.slaHours} Hours</div>
-              </div>
-
-              ${t.status !== 'RESOLVED' ? `
-                <button onclick="resolveTicket('${t._id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-lg transition">
-                  Mark Resolved
-                </button>
-              ` : `
-                <span class="px-3 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-lg">Done</span>
-              `}
-            </div>
-          </div>
-        `;
-      }).join('');
+            <p class="text-[11px] text-slate-300">${i.description}</p>
+          </div>`).join('');
+      } catch (err) { container.innerHTML = `<p class="text-xs text-rose-400 text-center">Error loading issues.</p>`; }
     }
 
-    async function resolveTicket(id) {
+    async function updateIssueStatus(id, status) {
+      await fetch(`/api/issues/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ status })
+      });
+      fetchAllIssues();
+    }
+
+    async function fetchAllPasses() {
+      const container = document.getElementById('allPassesList');
       try {
-        const res = await fetch(`/api/issues/${id}/status`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ status: 'RESOLVED' })
-        });
-        if (res.ok) fetchWardenTickets();
-      } catch (err) { console.error('Error resolving ticket:', err); }
+        const res = await fetch('/api/pass/all', { headers: { 'Authorization': `Bearer ${token}` } });
+        const passes = await res.json();
+        container.innerHTML = passes.map(p => `
+          <div class="p-3.5 bg-slate-900/60 border border-slate-700/60 rounded-xl space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-white">Student: ${p.student?.name || 'Unknown'} (${p.student?.roomNumber || 'N/A'})</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${p.status === 'APPROVED' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}">${p.status}</span>
+            </div>
+            <p class="text-[11px] text-slate-300">Destination: ${p.destination} | Reason: ${p.reason}</p>
+            <div class="flex items-center justify-between pt-2">
+              <span class="text-[10px] text-slate-400">Out: ${p.outDate} | Return: ${p.inDate}</span>
+              ${p.status === 'PENDING' ? `
+                <div class="flex gap-2">
+                  <button onclick="updatePassStatus('${p._id}', 'APPROVED')" class="px-2.5 py-1 bg-emerald-600/30 text-emerald-300 rounded text-[10px]">Approve</button>
+                  <button onclick="updatePassStatus('${p._id}', 'REJECTED')" class="px-2.5 py-1 bg-rose-600/30 text-rose-300 rounded text-[10px]">Reject</button>
+                </div>
+              ` : ''}
+            </div>
+          </div>`).join('');
+      } catch (err) { container.innerHTML = `<p class="text-xs text-rose-400 text-center">Error loading passes.</p>`; }
     }
 
-    // Initialize Dashboard
-    checkLockdownStatus();
-    fetchPendingPasses();
-    fetchWardenTickets();
+    async function updatePassStatus(id, status) {
+      await fetch(`/api/pass/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ status })
+      });
+      fetchAllPasses();
+    }
 
-    // Set polling intervals
-    setInterval(fetchPendingPasses, 3000);
-    setInterval(renderTickets, 1000);
-
-    if (window.lucide) lucide.createIcons();
+    fetchAllIssues();
   </script>
 </body>
 </html>

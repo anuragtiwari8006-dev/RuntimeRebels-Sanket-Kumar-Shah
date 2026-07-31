@@ -1,27 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const { 
-  createPass, 
-  getResidentPasses, 
-  verifyPass, 
-  toggleLockdown, 
-  getLockdownStatus,
-  getPendingPasses,
-  updatePassStatus
+const authMiddleware = require('../middleware/authMiddleware');
+const {
+  createGatePass,
+  getMyGatePasses,
+  getAllGatePasses,
+  updatePassStatus,
+  getGuardPasses,
+  markCheckOutIn
 } = require('../controllers/passController');
-const verifyToken = require('../middleware/authMiddleware');
-const authorizeRoles = require('../middleware/roleMiddleware');
 
-router.post('/request', verifyToken, authorizeRoles('RESIDENT'), createPass);
-router.get('/my-passes', verifyToken, authorizeRoles('RESIDENT'), getResidentPasses);
-router.post('/verify', verifyToken, authorizeRoles('SECURITY'), verifyPass);
+// Resident Routes
+router.post('/', authMiddleware, createGatePass);
+router.get('/my', authMiddleware, getMyGatePasses);
 
-// Warden Approval Routes
-router.get('/pending', verifyToken, authorizeRoles('WARDEN'), getPendingPasses);
-router.patch('/:id/status', verifyToken, authorizeRoles('WARDEN'), updatePassStatus);
+// Warden Routes
+router.get('/all', authMiddleware, getAllGatePasses);
+router.patch('/:id/status', authMiddleware, updatePassStatus);
 
-// Lockdown Routes
-router.post('/lockdown/toggle', verifyToken, authorizeRoles('WARDEN'), toggleLockdown);
-router.get('/lockdown/status', verifyToken, getLockdownStatus);
+// Security Guard Routes
+router.get('/guard', authMiddleware, getGuardPasses);
+router.patch('/:id/security', authMiddleware, markCheckOutIn);
 
 module.exports = router;

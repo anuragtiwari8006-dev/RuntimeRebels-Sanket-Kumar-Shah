@@ -1,42 +1,37 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
+const dotenv = require('dotenv');
 const path = require('path');
-require('dotenv').config();
 
-const authRoutes = require('./routes/authRoutes');
-const issueRoutes = require('./routes/issueRoutes');
-const passRoutes = require('./routes/passRoutes');
+dotenv.config();
 
 const app = express();
 
+// Body parser middleware (MUST BE BEFORE ROUTES)
 app.use(express.json());
-app.use(cors());
+app.use(express.urlencoded({ extended: true }));
 
+// Serve Static Files
 app.use(express.static(path.join(__dirname, 'public')));
 
 // API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/issues', issueRoutes);
-app.use('/api/passes', passRoutes);
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/issues', require('./routes/issueRoutes'));
+app.use('/api/pass', require('./routes/passRoutes'));
 
-app.get('/', (req, res) => {
+// Express 5 Fallback SPA Handler
+app.get('/*splat', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'HostelHub Core Engine Active' });
-});
-
-const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/hostelhub';
+const PORT = process.env.PORT || 5000;
 
-mongoose
-  .connect(MONGO_URI)
+mongoose.connect(MONGO_URI)
   .then(() => {
-    console.log('✅ Connected to MongoDB');
+    console.log('✅ Connected to MongoDB successfully!');
     app.listen(PORT, () => {
-      console.log(`🚀 HostelHub Server running at http://localhost:${PORT}`);
+      console.log(`🚀 HostelHub Server running on http://localhost:${PORT}`);
     });
   })
   .catch((err) => {
